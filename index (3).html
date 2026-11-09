@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#ffffff">
+<title>だいたい貯金</title>
+<style>
+/* ===== 1. デザイントークン ===== */
+:root{
+/* 余白 4pt グリッド */--s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;
+/* 角丸 */--r1:8px;--r2:12px;--r3:999px;
+/* 文字 */--f-cap:12px;--f-sub:13px;--f-body:15px;--f-ttl:17px;--f-h:24px;--f-num:44px;
+--font:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;
+/* 色（ライト） */--bg:#eef0f3;--sf:#fff;--fill:#f2f4f6;--ln:#e6e9ed;--tx:#111418;--sub:#7a828b;--bad:#e5484d;
+/* アクセント（着せ替えで上書き） */--ac:#06c755;--act:#04a046;--on:#fff;--ac2:color-mix(in srgb,var(--ac) 14%,var(--sf));
+--ease:cubic-bezier(.2,.8,.2,1);
+color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b0c0e;--sf:#17191c;--fill:#23262a;--ln:#2a2d32;--tx:#f2f4f6;--sub:#8b939c;--bad:#ff6b6b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0b0c0e;--sf:#17191c;--fill:#23262a;--ln:#2a2d32;--tx:#f2f4f6;--sub:#8b939c;--bad:#ff6b6b;color-scheme:dark}
+/* ===== 2. 基本 ===== */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--tx);font:var(--f-body)/1.55 var(--font);max-width:520px;margin-inline:auto;padding-bottom:84px;min-height:100vh;font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation;border:0;background:none;padding:0}
+button:disabled{opacity:.35;cursor:default}
+input[type=search]{-webkit-appearance:none;appearance:none}
+:focus-visible{outline:2px solid var(--act);outline-offset:2px}
+svg{display:block;flex:none}
+.sub{color:var(--sub);font-size:var(--f-sub)}.bad{color:var(--bad)}
+/* ===== 3. レイアウト（カードではなく全幅のセクション） ===== */
+.hd{display:flex;justify-content:space-between;align-items:center;height:56px;padding:0 var(--s4);background:var(--sf)}
+.hd h1{font-size:var(--f-h);font-weight:700;margin:0;letter-spacing:-.01em}
+.sec{background:var(--sf);padding:var(--s4);margin-bottom:var(--s2)}
+.sec.flat{padding-inline:0}
+.st{font-size:var(--f-sub);font-weight:600;color:var(--sub);margin:0 0 var(--s3)}
+.flex{display:flex;gap:var(--s2);align-items:center}
+.between{justify-content:space-between}
+/* ===== 4. 共通コンポーネント ===== */
+.ib{width:44px;height:44px;border-radius:var(--r3);display:grid;place-items:center;transition:background .15s}
+.ib:active{background:var(--fill)}
+.btn{min-height:48px;padding:0 var(--s4);border-radius:var(--r2);background:var(--fill);font-weight:600;transition:transform .12s var(--ease),background .15s}
+.btn:active{transform:scale(.97)}
+.btn.p{background:var(--ac);color:var(--on)}
+.btn.d{color:var(--bad)}
+.btn.s{min-height:36px;padding:0 var(--s3);font-size:var(--f-sub);border-radius:var(--r1)}
+.fld,input,select,textarea{width:100%;min-height:48px;padding:0 var(--s3);border:1px solid transparent;border-radius:var(--r2);background:var(--fill);font-size:16px}
+textarea{padding:var(--s3)}
+input:focus,select:focus,textarea:focus{border-color:var(--ac);outline:0}
+.f{display:block;font-size:var(--f-sub);color:var(--sub);margin-bottom:var(--s3)}
+.f input,.f select{margin-top:var(--s1);color:var(--tx)}
+.chips{display:flex;gap:var(--s2);overflow-x:auto;margin:0 calc(-1*var(--s4));padding:0 var(--s4) 2px;scrollbar-width:none}
+.chips.wrap{flex-wrap:wrap;overflow:visible;margin:0;padding:0}
+.chip{flex:none;min-height:36px;padding:0 var(--s4);border-radius:var(--r3);background:var(--fill);font-size:var(--f-sub);font-weight:600;transition:background .15s,color .15s,transform .12s var(--ease)}
+.chip:active{transform:scale(.96)}
+.chip.on{background:var(--ac);color:var(--on)}
+.seg{display:flex;background:var(--fill);border-radius:var(--r2);padding:3px;gap:3px}
+.seg button{flex:1;min-height:36px;border-radius:calc(var(--r2) - 3px);font-size:var(--f-sub);font-weight:600;color:var(--sub);transition:background .2s,color .2s}
+.seg button.on{background:var(--sf);color:var(--tx);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.li{display:flex;justify-content:space-between;align-items:center;gap:var(--s3);width:100%;text-align:left;min-height:60px;padding:var(--s2) var(--s4);position:relative;transition:background .12s}
+.li:active{background:var(--fill)}
+.li+.li::before{content:"";position:absolute;top:0;left:var(--s4);right:0;height:1px;background:var(--ln)}
+.li .t{min-width:0}.li b{font-weight:600;white-space:nowrap}
+.li .r{display:flex;align-items:center;gap:var(--s1);color:var(--sub)}.li .r b{color:var(--tx)}
+.empty{padding:var(--s5) var(--s4);text-align:center}
+.meter{position:relative;height:6px;border-radius:3px;background:var(--fill);margin:var(--s4) 0 var(--s3)}
+.meter i{position:absolute;inset:0 auto 0 0;border-radius:3px;background:var(--ac);transition:width .5s var(--ease)}
+.meter.ov i{background:var(--bad)}
+.meter u{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--tx);opacity:.35}
+.gl{display:block;width:100%;text-align:left;padding:var(--s4);position:relative}
+.gl+.gl::before{content:"";position:absolute;top:0;left:var(--s4);right:0;height:1px;background:var(--ln)}
+.gi{font-size:26px;width:44px;height:44px;border-radius:50%;background:var(--ac2);display:grid;place-items:center;flex:none}
+.gl .meter{margin:var(--s3) 0 0}
+.ok{color:var(--act);font-weight:700}
+.note{background:var(--fill);border-radius:var(--r2);padding:var(--s3);font-size:var(--f-cap);color:var(--sub);line-height:1.6}
+.cell.rec .dn{box-shadow:inset 0 0 0 2px var(--ac)}
+@keyframes pop{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}
+.pop{animation:pop .6s var(--ease)}
+.num{font-size:var(--f-num);font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s2)}
+.amt{min-height:56px;border-radius:var(--r2);background:var(--fill);font-size:18px;font-weight:600;transition:transform .12s var(--ease),background .15s}
+.amt:active{transform:scale(.95);background:var(--ac2)}
+.mbar{display:flex;justify-content:space-between;align-items:center;background:var(--sf);padding:0 var(--s2);border-top:1px solid var(--ln);margin-bottom:var(--s2)}
+.mbar b{font-weight:700}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);row-gap:var(--s1);text-align:center}
+.cal>span{font-size:var(--f-cap);color:var(--sub);padding-bottom:var(--s1)}
+.cell{height:54px;border-radius:var(--r2);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:4px;font-size:14px;transition:background .15s}
+.cell .dn{width:26px;height:26px;border-radius:50%;display:grid;place-items:center}
+.cell.t .dn{background:var(--ac);color:var(--on);font-weight:700}
+.cell.sel{background:var(--ac2)}
+.cell small{font-size:10px;color:var(--sub);line-height:1.2}
+.bars{display:flex;align-items:flex-end;gap:4px;height:150px}
+.bars div{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;font-size:10px;color:var(--sub);text-align:center;line-height:1.3}
+.bars i{display:block;width:100%;max-width:28px;background:var(--ac);border-radius:6px 6px 2px 2px;min-height:2px;margin:2px 0;transition:height .4s var(--ease)}
+.bars .o i{opacity:.3}
+.stack{display:flex;height:10px;border-radius:5px;overflow:hidden;gap:2px;margin-bottom:var(--s4)}
+.stack i{display:block;height:100%}
+.thin{height:4px;background:var(--fill);border-radius:2px;overflow:hidden;margin-top:6px}
+.thin i{display:block;height:100%;background:var(--ac)}.thin.over i{background:var(--bad)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:var(--s2)}
+.sw{display:flex;gap:var(--s3);overflow-x:auto;margin:0 calc(-1*var(--s4));padding:2px var(--s4);scrollbar-width:none}
+.sw button{flex:none;width:64px;text-align:center;font-size:var(--f-cap);color:var(--sub)}
+.sw i{display:grid;place-items:center;width:48px;height:48px;margin:0 auto 6px;border-radius:50%;color:#fff;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);transition:transform .15s var(--ease)}
+.sw button:active i{transform:scale(.92)}
+.sw .on i{box-shadow:0 0 0 2px var(--sf),0 0 0 4px currentColor}.sw .on{color:var(--tx);font-weight:600}
+/* ===== 5. タブ・シート・トースト ===== */
+.tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--sf);border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs button{flex:1;height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10px;font-weight:600;color:var(--sub);transition:color .2s}
+.tabs button.on{color:var(--tx)}.tabs button.on svg{color:var(--act)}
+.tabs button:active svg{transform:scale(.9)}.tabs svg{transition:transform .15s var(--ease)}
+#sh{position:fixed;inset:0;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .2s;display:flex;align-items:flex-end;justify-content:center}
+#sh.open{opacity:1;pointer-events:auto}
+#sh>div{width:100%;max-width:520px;background:var(--sf);border-radius:20px 20px 0 0;padding:var(--s5) var(--s4) calc(var(--s4) + env(safe-area-inset-bottom,0px));transform:translateY(32px);transition:transform .3s var(--ease);max-height:90vh;overflow:auto}
+#sh.open>div{transform:none}
+#sh h2{font-size:var(--f-ttl);margin:0 0 var(--s4)}
+#toast{position:fixed;left:50%;bottom:calc(72px + env(safe-area-inset-bottom,0px));transform:translate(-50%,12px);background:#2b2e33;color:#fff;padding:var(--s3) var(--s4);border-radius:var(--r2);font-size:14px;opacity:0;transition:opacity .2s,transform .25s var(--ease);pointer-events:none;display:flex;gap:var(--s4);align-items:center;max-width:92vw}
+#toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+#toast button{color:#7ee2a8;font-weight:700;white-space:nowrap;padding:var(--s1) 0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body>
+<div id="app"></div>
+<nav class="tabs" id="tabs"></nav>
+<div id="sh"><div></div></div>
+<div id="toast" role="status"></div>
+<input type="file" id="fi" accept=".json,application/json" hidden>
+<script>
+'use strict';
+/* ===== データ層（保存キー daitai-v1・形式は従来どおり） ===== */
+const TEST=/[?&]test=on(&|$)/.test(location.search)||location.hash==='#test';
+const DEV=TEST||/[?&]dev=on(&|$)/.test(location.search)||location.hash==='#dev';
+const MEM={},LS={getItem:k=>TEST?(k in MEM?MEM[k]:null):localStorage.getItem(k),setItem:(k,v)=>{if(TEST)MEM[k]=String(v);else localStorage.setItem(k,v)}};  // テスト中は本物の保存領域に一切触れない
+const K='daitai-v1',PAL=['var(--ac)','color-mix(in srgb,var(--ac) 65%,var(--sf))','color-mix(in srgb,var(--ac) 38%,var(--sf))','#f5a524','#8b95a1','#c7ccd1'];
+const def=()=>({v:1,cats:[{id:'c1',name:'食費',budget:30000},{id:'c2',name:'ランチ',budget:15000},{id:'c3',name:'娯楽',budget:10000},{id:'c4',name:'交通費',budget:8000}],mb:{},items:[],goals:[],allocs:[]});
+let NEWU=false;  // 保存データが無い＝新規ユーザー
+const newUser=()=>({v:1,cats:[],mb:{'2000-01':0},items:[],goals:[],allocs:[]});  // 予算は未設定(0)
+const amaxOk=v=>Number.isInteger(v)&&v>=100&&v<=1e7;
+function load(){let raw=null;try{raw=LS.getItem(K)}catch(e){}
+  if(raw){try{const o=JSON.parse(raw);if(o&&Array.isArray(o.cats)&&Array.isArray(o.items)){o.mb=o.mb&&typeof o.mb==='object'?o.mb:{};o.goals=Array.isArray(o.goals)?o.goals:[];o.allocs=Array.isArray(o.allocs)?o.allocs:[];if(!amaxOk(o.amax))delete o.amax;return o}}catch(e){}
+    try{LS.setItem(K+'-corrupt',raw)}catch(e){}}  // 読めないデータは上書き前に退避
+  if(raw==null){NEWU=true;return newUser()}
+  return def()}
+let D=load();
+const save=()=>{try{LS.setItem(K,JSON.stringify(D))}catch(e){toast('保存できませんでした。端末の空き容量を確認してください')}};
+/* ===== ユーティリティ ===== */
+const $=s=>document.querySelector(s),g=id=>document.getElementById(id);
+const yen=n=>'¥'+Math.round(n).toLocaleString('ja-JP');
+const yc=v=>v>=10000?(v/1e4).toFixed(v%1e4?1:0)+'万':v.toLocaleString('ja-JP');
+const pad=n=>String(n).padStart(2,'0');
+const ds=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const mk=d=>ds(d).slice(0,7);
+const md=s=>s.slice(5).replace('-','/');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const okDate=s=>{if(typeof s!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(s))return false;const d=new Date(s+'T00:00:00');return !isNaN(d)&&ds(d)===s};
+const W=['日','月','火','水','木','金','土'];
+const sqDef=()=>({q:'',cat:'',p:'all',from:'',to:'',min:'',max:''});
+let tab='home',vm=new Date(),sel=D.cats[0]&&D.cats[0].id,selDay=null,range='week',lastId=null,H=[],tt,sq=sqDef();
+vm.setDate(1);
+const budgetOf=m=>{if(D.mb[m]!=null)return D.mb[m];const ks=Object.keys(D.mb).filter(k=>k<=m).sort();return ks.length?D.mb[ks[ks.length-1]]:100000};
+const mi=m=>D.items.filter(i=>i.date.startsWith(m));
+const sum=a=>a.reduce((s,i)=>s+i.amt,0);
+const cname=id=>{const c=D.cats.find(c=>c.id===id);return c?esc(c.name):'(削除済み)'};
+const DEFA=[500,750,1000,1500,2000,3000,5000,10000];
+/* カテゴリー候補（ここを書き換えればそのまま候補が変わる） */
+const CAND=['日用品','交際費','衣服','美容','医療','趣味','光熱費','通信費','家賃','サブスク','教育','ペット','カフェ','コンビニ','飲み会','旅行','貯金'];
+function candHtml(q,pick){const have=new Set(D.cats.map(c=>c.name)),t=String(q||'').normalize('NFKC').trim().toLowerCase();
+  const l=CAND.filter(n=>!have.has(n)&&(!t||n.toLowerCase().includes(t)||n===pick));
+  return l.map(n=>`<button class="chip ${n===pick?'on':''}" data-a="pc" data-n="${esc(n)}">${esc(n)}</button>`).join('')||'<span class="sub">候補はありません。自由に入力してください</span>'}
+/* 最近使ったカテゴリー（新しい記録順） */
+function recentIds(n){const out=[];
+  const its=D.items.map((x,k)=>[x,k]).sort((a,c)=>a[0].date<c[0].date?1:a[0].date>c[0].date?-1:c[1]-a[1]);
+  for(const a of its){const id=a[0].cat;if(!out.includes(id)&&D.cats.some(c=>c.id===id)){out.push(id);if(out.length>=n)break}}
+  return out}
+/* 金額ボタンの自動生成：最大値→使いやすい金額の候補→8個以内に間引く。最大値は必ず含む */
+function genAmts(max){
+  max=Math.round(max);if(!(max>=1))return[];
+  if(max<100)return[max];
+  const lo=Math.max(100,max/100),a=[];
+  for(let p=100;p<=max;p*=10)for(const k of(p===100?[1,2,3,5]:[1,1.5,2,3,5])){const v=p*k;if(v>=lo&&v<=max&&v<max*0.9)a.push(v)}  // 最大値に近すぎる候補は省く
+  a.push(max);
+  while(a.length>8){let bi=1,bg=Infinity;for(let i=1;i<a.length-1;i++){const r=a[i+1]/a[i-1];if(r<bg){bg=r;bi=i}}a.splice(bi,1)}  // 間隔が詰まった所から1つずつ減らす
+  return a}
+const amtsOf=c=>c&&Array.isArray(c.amts)?c.amts:(amaxOk(D.amax)?genAmts(D.amax):DEFA);  // 個別に調整したカテゴリーはそれを優先
+/* ===== 目標（振り分け）：履歴 allocs から進捗を毎回計算するので二重計上が起きない ===== */
+const ICONS=['✈️','🎮','🛍️','🎁','🏠','🚗','📱','🍰','🎓','💰'];
+const gsum=id=>D.allocs.filter(a=>a.goal===id).reduce((s,a)=>s+a.amt,0);
+const asum=m=>D.allocs.filter(a=>a.month===m).reduce((s,a)=>s+a.amt,0);
+const avail=m=>Math.max(0,budgetOf(m)-sum(mi(m))-asum(m));
+const recDays=m=>new Set(mi(m).map(i=>i.date)).size;
+let gico=ICONS[0];
+const openSh=h=>{$('#sh>div').innerHTML=h;$('#sh').classList.add('open')};
+const arow=a=>{const x=D.goals.find(q=>q.id===a.goal);return `<button class="li" data-a="aedit" data-i="${esc(a.id)}"><span class="t"><b>${x?x.icon+' '+esc(x.name):'(削除済み)'}</b><br><span class="sub">${md(a.date)}　${a.month.replace('-','/')}の残額から</span></span><span class="r"><b>${yen(a.amt)}</b>${ic('r',18)}</span></button>`};
+function openGoal(id){const x=D.goals.find(q=>q.id===id);if(!x)return;const m=mk(vm),av=avail(m),s=gsum(id),p=Math.min(100,s/x.target*100),done=s>=x.target,qi=esc(id);
+  const h=D.allocs.filter(a=>a.goal===id).sort((a,b)=>a.date<b.date?1:-1).map(arow).join('')||'<div class="sub" style="padding:var(--s3) var(--s4)">まだ振り分けていません</div>';
+  openSh(`<div class="flex"><span class="gi">${x.icon}</span><h2 style="margin:0;flex:1">${esc(x.name)}</h2><button class="btn s" data-a="gedit" data-i="${qi}">編集</button></div>
+  <div class="meter"><i style="width:${p}%"></i></div><div class="flex between sub"><span>${yen(s)} / ${yen(x.target)}</span><span>${done?'<span class="ok">達成！</span>':'あと '+yen(x.target-s)}</span></div>
+  <h2 class="st" style="margin:var(--s5) 0 var(--s2)">${vm.getMonth()+1}月の残額 ${yen(av)} から振り分ける</h2>
+  <div class="chips wrap" style="margin-bottom:var(--s3)">${[1000,3000,5000].map(v=>`<button class="chip" data-a="gfill" data-v="${v}">${v.toLocaleString()}</button>`).join('')}<button class="chip" data-a="gfill" data-v="${av}">全額</button></div>
+  <div class="flex"><input id="ga" type="number" inputmode="numeric" min="1" placeholder="金額（円）"><button class="btn p" style="flex:none" data-a="galloc" data-i="${qi}" ${av?'':'disabled'}>振り分ける</button></div>
+  <h2 class="st" style="margin:var(--s5) 0 0">この目標の履歴</h2><div style="margin:0 calc(-1*var(--s4))">${h}</div>
+  <button class="btn" style="width:100%;margin-top:var(--s4)" data-a="close">閉じる</button>`)}
+function openAlloc(id){const a=D.allocs.find(q=>q.id===id);if(!a)return;const x=D.goals.find(q=>q.id===a.goal),mx=avail(a.month)+a.amt,qi=esc(id);
+  openSh(`<h2>振り分けを修正</h2><div class="sub" style="margin-bottom:var(--s3)">${x?esc(x.name):''}　${a.month.replace('-','/')}の残額から（上限 ${yen(mx)}）</div><label class="f">金額（円）<input id="al-a" type="number" inputmode="numeric" min="1" value="${a.amt}"></label>
+  <div class="flex"><button class="btn d" data-a="adel" data-i="${qi}">取り消す</button><button class="btn" style="flex:1" data-a="close">キャンセル</button><button class="btn p" style="flex:1" data-a="asave" data-i="${qi}">保存</button></div>`)}
+function gform(id){const x=id&&D.goals.find(q=>q.id===id);gico=x?x.icon:ICONS[0];const qi=esc(id||'');
+  openSh(`<h2>${x?'目標を編集':'目標を追加'}</h2><label class="f">目標名<input id="g-n" maxlength="20" value="${x?esc(x.name):''}" placeholder="例: 旅行、ゲーム機"></label><div class="f">アイコン</div><div class="chips wrap" style="margin-bottom:var(--s4)">${ICONS.map(e=>`<button class="chip ico ${e===gico?'on':''}" data-a="gico" data-v="${e}" style="font-size:20px;padding:0;width:44px">${e}</button>`).join('')}</div><label class="f">目標金額（円）<input id="g-t" type="number" inputmode="numeric" min="1" value="${x?x.target:''}" placeholder="例: 50000"></label>
+  <div class="flex">${x?`<button class="btn d" data-a="gdel" data-i="${qi}">削除</button>`:''}<button class="btn" style="flex:1" data-a="close">キャンセル</button><button class="btn p" style="flex:1" data-a="gsave" ${x?`data-i="${qi}"`:''}>保存</button></div>`)}
+function celebrate(x){openSh(`<div style="text-align:center;padding:var(--s4) 0"><div class="pop" style="font-size:64px">🎉</div><h2 style="font-size:20px;margin:var(--s3) 0">目標達成！</h2><p class="sub" style="font-size:var(--f-body)">${x.icon} ${esc(x.name)} の目標金額に届きました。おめでとうございます！</p></div><button class="btn p" style="width:100%" data-a="close">やったね</button>`)}
+function review(m,sp,pall,pv,it,now){
+  const cnt=D.cats.map(c=>[c.name,it.filter(i=>i.cat===c.id).length]).filter(a=>a[1]).map(a=>esc(a[0])+' '+a[1]+'回').join('　')||'まだありません';
+  const lab=m===now?'先月の同じ日まで':'先月',d=(m===now?pv:pall)-sp;
+  const msg=!it.length?'この月の記録はまだありません':!pall?'先月の記録がないので、来月から比べられます':d>0?`${lab}より ${yen(d)} 少なく使えました！`:d<0?`${lab}より ${yen(-d)} 多く使いました`:`${lab}と同じ額でした`;
+  const row=(a,b)=>`<div class="flex between" style="padding:var(--s2) 0"><span class="sub">${a}</span><b>${b}</b></div>`;
+  return `<div class="sec"><h2 class="st">${m===now?'今月':'月末'}の振り返り</h2><div style="font-weight:700;font-size:var(--f-ttl);margin-bottom:var(--s3)">${msg}</div>${row('支出の合計',yen(sp))}${row('目標に振り分けた金額',yen(asum(m)))}${row('記録した日数',recDays(m)+'日')}<div class="sub" style="margin-top:var(--s2)">カテゴリー別の回数</div><div>${cnt}</div></div>`}
+function toast(t,u){const e=$('#toast');e.innerHTML=esc(t)+(u?'<button data-a="undo">元に戻す</button>':'');e.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('show'),u?5000:1800)}
+/* ===== 操作（すべて取り消し可能） ===== */
+function snap(){H.push(JSON.stringify(D));if(H.length>30)H.shift()}
+function mut(fn,msg,u){snap();lastId=null;fn();save();render();if(msg)toast(msg,u)}
+function undo(){if(!H.length){toast('取り消せる操作はありません');return}D=JSON.parse(H.pop());lastId=null;if(!D.cats.some(c=>c.id===sel))sel=D.cats[0]&&D.cats[0].id;save();render();toast('元に戻しました')}
+function add(a){if(!sel){toast('先にカテゴリーを作ってください');return}const id=uid();snap();D.items.push({id,date:ds(new Date()),cat:sel,amt:a,memo:''});lastId=id;save();render();if(navigator.vibrate)navigator.vibrate(8);toast(yen(a)+' を記録しました',1)}
+function openEdit(id){const i=D.items.find(x=>x.id===id);if(!i)return;const q=esc(id);
+  const opts=D.cats.map(c=>`<option value="${esc(c.id)}" ${c.id===i.cat?'selected':''}>${esc(c.name)}</option>`).join('')+(D.cats.some(c=>c.id===i.cat)?'':`<option value="${esc(i.cat)}" selected>(削除済み)</option>`);
+  $('#sh>div').innerHTML=`<h2>記録を編集</h2><label class="f">金額（円）<input id="e-a" type="number" inputmode="numeric" min="1" value="${i.amt}"></label><label class="f">日付<input id="e-d" type="date" value="${esc(i.date)}"></label><label class="f">カテゴリー<select id="e-c">${opts}</select></label><label class="f">メモ<input id="e-m" maxlength="60" value="${esc(i.memo||'')}" placeholder="メモ（任意）"></label>
+  <div class="flex"><button class="btn d" data-a="edel" data-i="${q}">削除</button><button class="btn" style="flex:1" data-a="close">キャンセル</button><button class="btn p" style="flex:1" data-a="esave" data-i="${q}">保存</button></div>`;
+  $('#sh').classList.add('open')}
+const closeSheet=()=>$('#sh').classList.remove('open');
+/* ===== バックアップの検証（復元データは全項目を検査して作り直す） ===== */
+function sane(text){
+  if(text.length>8e6)return{err:'ファイルが大きすぎます'};
+  let o;try{o=JSON.parse(text)}catch(e){return{err:'JSONとして読み込めません'}}
+  if(!o||typeof o!=='object'||Array.isArray(o)||!Array.isArray(o.cats)||!Array.isArray(o.items))return{err:'バックアップの形式が違います'};
+  if(o.cats.length>200||o.items.length>50000)return{err:'データ量が多すぎます'};
+  const num=(v,mx)=>typeof v==='number'&&isFinite(v)&&v>=0&&v<=mx,idOk=s=>typeof s==='string'&&/^[\w-]{1,40}$/.test(s);
+  const ids=new Set(),cats=[];
+  for(const c of o.cats){
+    if(!c||!idOk(c.id)||ids.has(c.id)||typeof c.name!=='string'||!c.name.trim()||!num(c.budget==null?0:c.budget,1e9))return{err:'カテゴリーのデータが不正です'};
+    ids.add(c.id);const n={id:c.id,name:c.name.trim().slice(0,30),budget:Math.round(c.budget||0)};
+    if(c.amts!=null){if(!Array.isArray(c.amts)||c.amts.length>12||!c.amts.every(a=>Number.isInteger(a)&&a>0&&a<=1e9))return{err:'金額ボタンのデータが不正です'};if(c.amts.length)n.amts=[...new Set(c.amts)].sort((x,y)=>x-y)}
+    cats.push(n)}
+  const mb={};
+  if(o.mb!=null){if(typeof o.mb!=='object'||Array.isArray(o.mb))return{err:'予算のデータが不正です'};
+    for(const k of Object.keys(o.mb)){if(!/^\d{4}-\d{2}$/.test(k)||!num(o.mb[k],1e9))return{err:'予算のデータが不正です'};mb[k]=Math.round(o.mb[k])}}
+  const seen=new Set(),items=[];
+  for(const i of o.items){
+    if(!i||!idOk(i.id)||seen.has(i.id)||!okDate(i.date)||typeof i.cat!=='string'||i.cat.length>40||!Number.isInteger(i.amt)||i.amt<1||i.amt>1e9||(i.memo!=null&&typeof i.memo!=='string'))return{err:'記録のデータが不正です（'+(items.length+1)+'件目付近）'};
+    seen.add(i.id);items.push({id:i.id,date:i.date,cat:i.cat,amt:i.amt,memo:(i.memo||'').slice(0,60)})}
+  const gids=new Set(),goals=[],allocs=[];
+  if(o.goals!=null){if(!Array.isArray(o.goals)||o.goals.length>200)return{err:'目標のデータが不正です'};
+    for(const x of o.goals){if(!x||!idOk(x.id)||gids.has(x.id)||typeof x.name!=='string'||!x.name.trim()||typeof x.icon!=='string'||x.icon.length>8||!Number.isInteger(x.target)||x.target<1||x.target>1e9)return{err:'目標のデータが不正です'};gids.add(x.id);goals.push({id:x.id,name:x.name.trim().slice(0,20),icon:x.icon,target:x.target})}}
+  if(o.allocs!=null){if(!Array.isArray(o.allocs)||o.allocs.length>50000)return{err:'振り分けのデータが不正です'};const aids=new Set();
+    for(const a of o.allocs){if(!a||!idOk(a.id)||aids.has(a.id)||!gids.has(a.goal)||!/^\d{4}-\d{2}$/.test(a.month)||!okDate(a.date)||!Number.isInteger(a.amt)||a.amt<1||a.amt>1e9)return{err:'振り分けのデータが不正です'};aids.add(a.id);allocs.push({id:a.id,goal:a.goal,month:a.month,date:a.date,amt:a.amt})}}
+  return{data:{v:1,cats,mb,items,goals,allocs,...(amaxOk(o.amax)?{amax:o.amax}:{})}}}
+function doImport(text){const r=sane(text);if(r.err){toast(r.err);return}const d=r.data;
+  if(!confirm(`${d.items.length}件の記録と${d.cats.length}個のカテゴリーを復元します。\n今のデータは置き換わります。よろしいですか？`))return;
+  try{LS.setItem(K+'-prev',JSON.stringify(D))}catch(e){}  // 復元前の控え
+  snap();D=d;sel=D.cats[0]&&D.cats[0].id;lastId=null;save();render();toast('復元しました',1)}
+/* ===== 画面（デザインシステム：アイコン／ヘッダー／リスト／着せ替え） ===== */
+const P={home:'M3 11l9-8 9 8M5.5 9.5V20h13V9.5',cal:'M4 6h16v14H4zM4 10.5h16M9 3.5v4M15 3.5v4',chart:'M5 20V11M12 20V4M19 20v-6',set:'M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4',undo:'M9 14L4 9l5-5M4 9h9.5a6.5 6.5 0 010 13H11',l:'M15 5l-7 7 7 7',r:'M9 5l7 7-7 7',ok:'M5 12.5l4.5 4.5L19 7.5',goal:'M6 21V4M6 4h11l-2 4 2 4H6',search:'M11 4a7 7 0 100 14 7 7 0 000-14zM20 20l-3.5-3.5',clock:'M12 4a8 8 0 100 16 8 8 0 000-16zM12 8v4.5l3 1.5'};
+const ic=(n,s=24)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${P[n]}"/></svg>`;
+// 着せ替え: [名前, アクセント, 文字用アクセント, ダーク時アクセント]
+const SKINS={line:['グリーン','#06c755','#04a046','#2fd46d'],forest:['深緑','#1f4d3a','#1f4d3a','#86c9a4'],indigo:['藍','#3b5bdb','#3b5bdb','#8da2fb'],sakura:['桜','#e64980','#c2255c','#f783ac'],sumi:['墨','#2b2b2b','#2b2b2b','#e5e5e5'],sunset:['夕焼け','#f76707','#d9480f','#ff922b']};
+const THEMES=[['auto','自動'],['light','ライト'],['dark','ダーク']];
+const pref=(k,ok,d)=>{try{const v=LS.getItem(k);return ok(v)?v:d}catch(e){return d}};
+const setPref=(k,v)=>{try{LS.setItem(k,v)}catch(e){}};
+let skin=pref('daitai-skin',v=>SKINS[v],'line'),theme=pref('daitai-theme',v=>THEMES.some(t=>t[0]===v),'auto');
+const isDark=()=>theme==='auto'?matchMedia('(prefers-color-scheme:dark)').matches:theme==='dark';
+function applySkin(){const r=document.documentElement,s=SKINS[skin],d=isDark();
+  if(theme==='auto')delete r.dataset.theme;else r.dataset.theme=theme;
+  r.style.setProperty('--ac',d?s[3]:s[1]);r.style.setProperty('--act',d?s[3]:s[2]);r.style.setProperty('--on',d?'#0b0f0d':'#fff')}
+const head=(t,r='')=>`<header class="hd"><h1>${t}</h1><div class="flex">${r}</div></header>`;
+const itemRow=(i,f)=>`<button class="li" data-a="edit" data-i="${esc(i.id)}"><span class="t"><b>${cname(i.cat)}</b><br><span class="sub">${f?i.date.replace(/-/g,'/'):md(i.date)}${i.memo?'　'+esc(i.memo):''}</span></span><span class="r"><b>${yen(i.amt)}</b>${ic('r',18)}</span></button>`;
+const mbar=()=>`<div class="mbar"><button class="ib" data-a="mv" data-n="-1" aria-label="前の月">${ic('l')}</button><b>${vm.getFullYear()}年${vm.getMonth()+1}月</b><button class="ib" data-a="mv" data-n="1" aria-label="次の月">${ic('r')}</button></div>`;
+function srFilter(){
+  const terms=sq.q.normalize('NFKC').toLowerCase().split(/\s+/).filter(Boolean);
+  const now=new Date(),tm=mk(now),lm=mk(new Date(now.getFullYear(),now.getMonth()-1,1));
+  const mn=sq.min!==''?+sq.min:null,mx=sq.max!==''?+sq.max:null;
+  return D.items.map((x,k)=>[x,k]).filter(a=>{const i=a[0];
+    if(sq.cat&&i.cat!==sq.cat)return false;
+    if(sq.p==='this'&&!i.date.startsWith(tm))return false;
+    if(sq.p==='last'&&!i.date.startsWith(lm))return false;
+    if(sq.p==='custom'){if(sq.from&&i.date<sq.from)return false;if(sq.to&&i.date>sq.to)return false}
+    if(mn!=null&&i.amt<mn)return false;
+    if(mx!=null&&i.amt>mx)return false;
+    if(terms.length){const c=D.cats.find(c=>c.id===i.cat);
+      const h=[i.memo||'',c?c.name:'削除済み',String(i.amt),i.amt.toLocaleString('ja-JP'),i.date,md(i.date),(+i.date.slice(5,7))+'月'+(+i.date.slice(8,10))+'日'].join(' ').normalize('NFKC').toLowerCase();
+      if(!terms.every(t=>h.includes(t)))return false}
+    return true}).sort((a,c)=>a[0].date<c[0].date?1:a[0].date>c[0].date?-1:c[1]-a[1]).map(a=>a[0])}
+function srRes(){const r=srFilter(),shown=r.slice(0,100);
+  const head=`<div class="flex between" style="padding:0 var(--s4) var(--s2)"><h2 class="st" style="margin:0">${r.length}件</h2><span class="sub">合計 ${yen(sum(r))}</span></div>`;
+  if(!r.length)return head+'<div class="empty sub">見つかりませんでした。キーワードや条件を変えてみてください</div>';
+  return head+shown.map(i=>itemRow(i,1)).join('')+(r.length>100?'<div class="empty sub">新しい順に100件まで表示しています。条件を絞ってください</div>':'')}
+function openAddCat(){
+  $('#sh>div').innerHTML=`<h2>カテゴリーを追加</h2><label class="f">カテゴリー名<input id="nc-n" maxlength="30" autocomplete="off" placeholder="例: 日用品"></label><div class="sub" style="margin-bottom:var(--s2)">候補（タップで入力）</div><div class="chips wrap" id="cand" style="margin-bottom:var(--s4)">${candHtml('')}</div><label class="f">月の予算（円）<input id="nc-b" type="number" inputmode="numeric" min="0" value="10000"></label><div class="flex"><button class="btn" style="flex:1" data-a="close">キャンセル</button><button class="btn p" style="flex:1" data-a="acs">追加</button></div>`;
+  $('#sh').classList.add('open')}
+const views={
+home(){
+  const t=new Date(),m=mk(t),sp=sum(mi(m)),b=budgetOf(m),al=asum(m),rem=b-sp-al,dim=new Date(t.getFullYear(),t.getMonth()+1,0).getDate(),left=dim-t.getDate()+1,pace=t.getDate()/dim*100;
+  const pct=b>0?Math.min(100,sp/b*100):(sp>0?100:0);
+  const line=rem<0?`予算を ${yen(-rem)} 超えています`:`残り${left}日 ・ 1日あたり ${yen(rem/left)}`+(b>0&&sp/b*100>pace+5?' ・ ペース早め':'');
+  const chips=D.cats.map(c=>`<button class="chip ${c.id===sel?'on':''}" data-a="sel" data-i="${esc(c.id)}">${esc(c.name)}</button>`).join('')||'<span class="sub">設定でカテゴリーを追加してください</span>';
+  const rc=D.items.length&&D.cats.length>3?recentIds(3):[];
+  const recent=rc.length?`<div class="flex" style="margin-bottom:var(--s3)"><span class="sub" style="display:flex;align-items:center;gap:4px;flex:none">${ic('clock',14)}最近</span><div class="chips" style="flex:1;min-width:0;margin:0;padding:0">${rc.map(id=>{const c=D.cats.find(c=>c.id===id);return `<button class="chip ${id===sel?'on':''}" data-a="sel" data-i="${esc(id)}">${esc(c.name)}</button>`}).join('')}</div></div>`:'';
+  const amts=amtsOf(D.cats.find(c=>c.id===sel)).map(a=>`<button class="amt" data-a="add" data-v="${a}">${a.toLocaleString()}</button>`).join('');
+  const rec=D.items.map((x,k)=>[x,k]).sort((a,c)=>a[0].date<c[0].date?1:a[0].date>c[0].date?-1:c[1]-a[1]).slice(0,6).map(a=>itemRow(a[0])).join('')||'<div class="empty sub">金額ボタンを押すと、ここに記録が並びます</div>';
+  const li=D.items.find(i=>i.id===lastId);
+  const last=li?`<div class="sec"><div class="flex between"><span><b>${cname(li.cat)}　${yen(li.amt)}</b><br><span class="sub">直前の記録</span></span><button class="btn s" data-a="undo">取り消す</button></div><input id="mm" data-c="memo" data-i="${esc(li.id)}" maxlength="60" placeholder="メモ（任意）例: コンビニでお昼" value="${esc(li.memo||'')}" aria-label="直前の記録のメモ" style="margin-top:12px"></div>`:'';
+  return head('ホーム',`<button class="ib" data-a="srch" aria-label="検索">${ic('search')}</button><button class="ib" data-a="undo" ${H.length?'':'disabled'} aria-label="直前の操作を元に戻す">${ic('undo')}</button>`)+
+  `<div class="sec" style="padding-top:var(--s5)"><div class="sub">${t.getMonth()+1}月${t.getDate()}日（${W[t.getDay()]}） ・ ${b>0?'今月の残り予算':'今月の使った額'}</div><div class="num ${b>0&&rem<0?'bad':''}" style="margin-top:6px">${yen(b>0?rem:sp)}</div>
+  ${b>0?`<div class="meter ${rem<0?'ov':''}" role="img" aria-label="予算の${Math.round(pct)}%を使用"><i style="width:${pct}%"></i><u style="left:${pace}%"></u></div>`:''}
+  <div class="flex between sub"><span>使った額 ${yen(sp)}${al?' ・ 目標へ '+yen(al):''}</span><span>予算 ${b>0?yen(b):'未設定'}</span></div><div style="margin-top:var(--s2);font-weight:600">${b>0?line:'予算は設定からいつでも決められます'}</div></div>
+  <div class="sec">${recent}<div class="chips">${chips}</div>
+  <div class="flex between" style="margin:var(--s4) 0 var(--s3)"><h2 class="st" style="margin:0">いくら使った？</h2><button class="btn s" data-a="tab" data-t="set">ボタン編集</button></div>${D.items.length?'':'<div style="margin-bottom:var(--s2);color:var(--act);font-weight:600">まずは金額ボタンを押してみてください</div>'}<div class="grid">${amts}</div>
+  <h2 class="st" style="margin:var(--s4) 0 var(--s2)">金額を入力（下1桁は不要）</h2><div class="flex"><input id="mn" type="number" inputmode="numeric" min="1" placeholder="例: 12" aria-label="金額（十円単位）"><b style="white-space:nowrap">0円</b><button class="btn p" data-a="mrec">記録</button></div><div class="sub" id="mpv" style="margin-top:var(--s2)">12と入れると ¥120</div></div>
+  ${last}<div class="sec flat"><div class="flex between" style="padding:0 var(--s4);margin-bottom:var(--s2)"><h2 class="st" style="margin:0">最近の記録</h2><button class="btn s" data-a="srch">検索・すべて見る</button></div>${rec}</div>`},
+cal(){
+  const m=mk(vm),y=vm.getFullYear(),mo=vm.getMonth(),first=new Date(y,mo,1).getDay(),n=new Date(y,mo+1,0).getDate(),tot={};
+  mi(m).forEach(i=>tot[i.date]=(tot[i.date]||0)+i.amt);
+  let cells=W.map(w=>`<span>${w}</span>`).join('')+'<i></i>'.repeat(first);
+  for(let d=1;d<=n;d++){const k=m+'-'+pad(d),v=tot[k];cells+=`<button class="cell ${k===ds(new Date())?'t':''} ${k===selDay?'sel':''} ${v?'rec':''}" data-a="day" data-d="${k}"><span class="dn">${d}</span><small>${v?yc(v):''}</small></button>`}
+  const dl=selDay?D.items.filter(i=>i.date===selDay).map(i=>itemRow(i)).join('')||'<div class="empty sub">この日の記録はありません</div>':'<div class="empty sub">日付をタップすると内訳が見られます</div>';
+  return head('カレンダー')+mbar()+`<div class="sec"><div class="sub" style="margin-bottom:var(--s3)">この月に記録した日 <b>${recDays(m)}</b>日</div><div class="cal">${cells}</div></div><div class="sec flat"><h2 class="st" style="padding:0 var(--s4)">${selDay?selDay.replace(/-/g,'/'):'日ごとの内訳'}</h2>${dl}</div>`},
+goal(){
+  const m=mk(vm),av=avail(m),mo=vm.getMonth()+1;
+  const cards=D.goals.map(x=>{const s=gsum(x.id),p=Math.min(100,s/x.target*100),done=s>=x.target;return `<button class="gl" data-a="gopen" data-i="${esc(x.id)}"><div class="flex"><span class="gi">${x.icon}</span><span style="flex:1;min-width:0"><b>${esc(x.name)}</b>${done?' <span class="ok">達成！</span>':''}<br><span class="sub">${yen(s)} / ${yen(x.target)}</span></span><b>${done?100:Math.floor(p)}%</b></div><div class="meter"><i style="width:${p}%"></i></div></button>`}).join('')||'<div class="empty sub">貯めたいものを目標として追加してみましょう</div>';
+  const hist=D.allocs.filter(a=>a.month===m).sort((a,b)=>a.date<b.date?1:-1).map(arow).join('')||'<div class="empty sub">この月の振り分けはまだありません</div>';
+  return head('目標')+mbar()+`<div class="sec"><div class="note">この金額はアプリ内で管理する目標金額です。実際の預金残高や金融機関の口座残高を示すものではありません。</div></div>
+  <div class="sec"><div class="sub">${mo}月の振り分けできる残額</div><div class="num" style="font-size:32px;margin-top:4px">${yen(av)}</div><div class="sub" style="margin-top:var(--s1)">予算 ${yen(budgetOf(m))} − 支出 ${yen(sum(mi(m)))} − 振り分け済み ${yen(asum(m))}</div>${budgetOf(m)>0?'':'<div class="sub" style="margin-top:var(--s1)">設定で月の予算を決めると振り分けできます</div>'}</div>
+  <div class="sec flat"><div class="flex between" style="padding:0 var(--s4) var(--s2)"><h2 class="st" style="margin:0">目標</h2><button class="btn s p" data-a="gnew">目標を追加</button></div>${cards}</div>
+  <div class="sec flat"><h2 class="st" style="padding:0 var(--s4)">${mo}月の振り分け履歴</h2>${hist}</div>`},
+graph(){
+  const m=mk(vm),y=vm.getFullYear(),mo=vm.getMonth(),it=mi(m),sp=sum(it),b=budgetOf(m),diff=b-sp,now=mk(new Date());
+  const pk=mk(new Date(y,mo-1,1)),cut=m===now?new Date().getDate():99,pall=sum(mi(pk)),pv=sum(mi(pk).filter(i=>+i.date.slice(8,10)<=cut)),d2=sp-pv;
+  const cmp=!pv&&!sp?'先月も今月も記録がありません':d2===0?'先月と同じ額です':`先月${m===now?'の同じ日まで':''}より ${yen(Math.abs(d2))} ${d2<0?'少ない':'多い'}`;
+  const ms=[];for(let k=5;k>=0;k--)ms.push(new Date(y,mo-k,1));
+  const mt=ms.map(d=>sum(mi(mk(d)))),mx6=Math.max(...mt,1);
+  const trend=ms.map((d,i)=>`<div class="${mk(d)===m?'':'o'}"><span>${mt[i]?yc(mt[i]):''}</span><i style="height:${mt[i]/mx6*96}px"></i>${d.getMonth()+1}月</div>`).join('');
+  const end=m===now?new Date():new Date(y,mo+1,0),days=[];
+  if(range==='week'){for(let i=6;i>=0;i--)days.push(new Date(end.getFullYear(),end.getMonth(),end.getDate()-i))}
+  else{for(let d=1;d<=new Date(y,mo+1,0).getDate();d++)days.push(new Date(y,mo,d))}
+  const vals=days.map(d=>sum(D.items.filter(i=>i.date===ds(d)))),mx=Math.max(...vals,1),tot=vals.reduce((a,v)=>a+v,0),wk=range==='week',nd=days.length;
+  const bars=days.map((d,i)=>`<div><span>${wk&&vals[i]?yc(vals[i]):''}</span><i style="height:${vals[i]/mx*96}px"></i>${wk||d.getDate()%5===1||i===nd-1?d.getDate():'&nbsp;'}</div>`).join('');
+  const known=new Set(D.cats.map(c=>c.id)),rows=D.cats.map(c=>({n:esc(c.name),s:sum(it.filter(i=>i.cat===c.id)),b:c.budget>0?c.budget:null})),os=sum(it.filter(i=>!known.has(i.cat)));
+  if(os)rows.push({n:'(削除済み)',s:os,b:null});
+  rows.forEach((r,k)=>r.c=PAL[k%PAL.length]);
+  const stack=rows.filter(r=>r.s>0).map(r=>`<i style="flex:${r.s};background:${r.c}"></i>`).join('');
+  const list=rows.map(r=>`<div style="margin-bottom:var(--s3)"><div class="flex between"><span><i class="dot" style="background:${r.c}"></i>${r.n}　<span class="sub">${sp?Math.round(r.s/sp*100):0}%</span></span><span class="${r.b!=null&&r.s>r.b?'bad':''}">${yen(r.s)}${r.b!=null?' / '+yen(r.b):''}</span></div>${r.b!=null?`<div class="thin ${r.s>r.b?'over':''}"><i style="width:${Math.min(100,r.b>0?r.s/r.b*100:(r.s?100:0))}%"></i></div>`:''}</div>`).join('')||'<div class="sub">カテゴリーがありません</div>';
+  return head('グラフ')+mbar()+`<div class="sec"><h2 class="st">${m<now?'月末のまとめ':m===now?'今月のまとめ（途中経過）':'この月のまとめ'}</h2>${b>0?`<div class="sub">予算 ${yen(b)} − 使った額 ${yen(sp)}</div><div class="num ${diff<0?'bad':''}" style="font-size:28px;margin:4px 0 var(--s2)">${diff>=0?`${yen(diff)} 節約`:`${yen(-diff)} オーバー`}</div>`:`<div class="sub">この月の使った額（予算は未設定）</div><div class="num" style="font-size:28px;margin:4px 0 var(--s2)">${yen(sp)}</div>`}<div>${cmp}</div><div class="sub">先月の合計 ${yen(pall)}</div></div>
+  ${review(m,sp,pall,pv,it,now)}<div class="sec"><h2 class="st">月ごとの支出（直近6か月）</h2><div class="bars">${trend}</div></div>
+  <div class="sec"><div class="seg" style="margin-bottom:var(--s4)"><button class="${wk?'on':''}" data-a="range" data-r="week">1週間</button><button class="${wk?'':'on'}" data-a="range" data-r="month">1か月</button></div>
+  <div class="bars">${bars}</div><div class="sub" style="margin-top:var(--s2)">${wk?md(ds(days[0]))+'〜'+md(ds(days[6])):y+'年'+(mo+1)+'月'}の合計 ${yen(tot)} ・ 1日の最大 ${yen(mx)}</div></div>
+  <div class="sec"><h2 class="st">カテゴリー別の割合</h2>${stack?`<div class="stack">${stack}</div>`:'<div class="sub" style="margin-bottom:var(--s3)">この月の支出はまだありません</div>'}${list}</div>`},
+search(){
+  const cs=`<button class="chip ${sq.cat?'':'on'}" data-a="sc" data-i="">すべて</button>`+D.cats.map(c=>`<button class="chip ${sq.cat===c.id?'on':''}" data-a="sc" data-i="${esc(c.id)}">${esc(c.name)}</button>`).join('');
+  const ps=[['all','すべて'],['this','今月'],['last','先月'],['custom','期間指定']];
+  return `<header class="hd"><div class="flex"><button class="ib" data-a="tab" data-t="home" aria-label="ホームに戻る">${ic('l')}</button><h1>検索</h1></div></header>
+  <div class="sec"><input id="sq-q" type="search" enterkeyhint="search" autocomplete="off" placeholder="メモ・カテゴリー・金額・日付で探す" value="${esc(sq.q)}" aria-label="キーワード">
+  <div class="chips" style="margin-top:var(--s3)">${cs}</div>
+  <div class="seg" style="margin-top:var(--s3)">${ps.map(p=>`<button class="${sq.p===p[0]?'on':''}" data-a="sp" data-k="${p[0]}">${p[1]}</button>`).join('')}</div>
+  ${sq.p==='custom'?`<div class="flex" style="margin-top:var(--s3)"><input id="sq-f" type="date" value="${esc(sq.from)}" aria-label="開始日"><span class="sub">〜</span><input id="sq-t" type="date" value="${esc(sq.to)}" aria-label="終了日"></div>`:''}
+  <div class="flex" style="margin-top:var(--s3)"><input id="sq-min" type="number" inputmode="numeric" min="0" placeholder="金額 下限" value="${esc(sq.min)}" aria-label="金額の下限"><span class="sub">〜</span><input id="sq-max" type="number" inputmode="numeric" min="0" placeholder="金額 上限" value="${esc(sq.max)}" aria-label="金額の上限"></div>
+  <div style="margin-top:var(--s3)"><button class="btn s" data-a="sclr">条件をクリア</button></div></div>
+  <div class="sec flat" id="sr">${srRes()}</div>`},
+set(){
+  const m=mk(vm);
+  const cl=D.cats.map(c=>{const q=esc(c.id);return `<div class="sec" style="margin:0;border-top:1px solid var(--ln)"><div class="flex"><input value="${esc(c.name)}" data-c="ren" data-i="${q}" aria-label="カテゴリー名" style="flex:2"><input type="number" inputmode="numeric" value="${c.budget}" data-c="cb" data-i="${q}" aria-label="月の予算" style="flex:2"></div>
+  <div class="sub" style="margin:var(--s3) 0 var(--s2)">金額ボタン（タップで削除）${Array.isArray(c.amts)?' ・個別に調整中':''}</div><div class="chips wrap">${amtsOf(c).map(a=>`<button class="chip" data-a="da" data-i="${q}" data-v="${a}">${a.toLocaleString()} ✕</button>`).join('')}</div>${Array.isArray(c.amts)?`<button class="btn s" style="margin-top:var(--s2)" data-a="ra" data-i="${q}">最大値から自動にもどす</button>`:''}
+  <div class="flex" style="margin:var(--s3) 0"><input id="na-${q}" type="number" inputmode="numeric" placeholder="追加する金額（円）"><button class="btn p" data-a="aa" data-i="${q}">追加</button></div>
+  <button class="btn s d" data-a="rc" data-i="${q}">このカテゴリーを削除</button></div>`}).join('');
+  const sw=Object.keys(SKINS).map(k=>`<button class="${k===skin?'on':''}" data-a="skin" data-k="${k}" aria-label="${SKINS[k][0]}"><i style="background:${isDark()?SKINS[k][3]:SKINS[k][1]};color:${isDark()?'#0b0f0d':'#fff'}">${k===skin?ic('ok',22):''}</i>${SKINS[k][0]}</button>`).join('');
+  return head('設定')+mbar()+`<div class="sec"><h2 class="st">着せ替え</h2><div class="sw" role="group" aria-label="テーマカラー">${sw}</div>
+  <div class="seg" style="margin-top:var(--s4)">${THEMES.map(t=>`<button class="${t[0]===theme?'on':''}" data-a="theme" data-k="${t[0]}">${t[1]}</button>`).join('')}</div></div>
+  <div class="sec"><h2 class="st">この月の予算</h2><input type="number" inputmode="numeric" value="${budgetOf(m)}" data-c="mb" data-m="${m}" aria-label="この月の予算"><div class="sub" style="margin-top:var(--s2)">設定した月以降は同じ金額が引き継がれます</div></div>
+  <div class="sec"><h2 class="st">金額ボタンの最大値</h2><div class="chips wrap">${[1000,3000,5000,10000,20000].map(v=>`<button class="chip ${D.amax===v?'on':''}" data-a="amx" data-v="${v}">${v.toLocaleString()}円</button>`).join('')}</div>
+  <div class="flex" style="margin-top:var(--s3)"><input id="amx" type="number" inputmode="numeric" min="100" placeholder="自由に入力（例: 7000）" value="${amaxOk(D.amax)&&![1000,3000,5000,10000,20000].includes(D.amax)?D.amax:''}"><button class="btn p" style="flex:none" data-a="amxs">決定</button></div>
+  <div class="sub" style="margin-top:var(--s2)" id="amp">${amaxOk(D.amax)?'ボタン: '+genAmts(D.amax).map(n=>n.toLocaleString()).join(' / '):'未設定のときは標準のボタンです'}</div><div class="sub" style="margin-top:var(--s1)">変えると、個別に調整していないカテゴリーのボタンが作り直されます</div></div>
+  <div class="sec flat" style="padding-bottom:var(--s4)"><h2 class="st" style="padding:0 var(--s4)">カテゴリー（名前 ／ 月の予算）</h2>${cl}<div style="padding:var(--s3) var(--s4) 0"><button class="btn p" style="width:100%" data-a="ac">カテゴリーを追加</button></div></div>
+  <div class="sec flat"><button class="li" data-a="tour" data-n="0"><span class="t"><b>使い方を見る</b></span><span class="r">${ic('r',18)}</span></button></div>
+  ${DEV?`<div class="sec"><h2 class="st">開発用</h2><div class="sub" style="margin-bottom:var(--s3)">${TEST?'テストモード中：保存はこの画面の中だけで、本物のデータには触れません。':''}確認用の画面です。記録やカテゴリーは変更されません。</div><button class="btn" style="width:100%" data-a="resetup">初回設定をもう一度表示</button></div>`:''}<div class="sec"><h2 class="st">バックアップ</h2><div class="sub" style="margin-bottom:var(--s3)">記録・カテゴリー・予算・目標をJSONファイルで保存・復元できます。復元前に内容を検査し、直後なら元に戻せます。</div>
+  <div class="flex"><button class="btn p" style="flex:1" data-a="exp">書き出す</button><button class="btn" style="flex:1" data-a="imp">ファイルから復元</button></div>
+  <details style="margin-top:var(--s4)"><summary class="sub">文字列で保存・復元する</summary><textarea id="im" rows="3" placeholder="バックアップの文章を貼り付け" style="margin-top:var(--s2)"></textarea><div class="flex" style="margin-top:var(--s2)"><button class="btn" style="flex:1" data-a="cp">現在のデータをコピー</button><button class="btn" style="flex:1" data-a="impt">貼り付けて復元</button></div></details></div>`}
+};
+const T=[['home','ホーム'],['cal','カレンダー'],['goal','目標'],['graph','グラフ'],['set','設定']];
+const TI={home:'home',cal:'cal',goal:'goal',graph:'chart',set:'set'};
+/* ===== はじめての説明（初回のみ自動表示／設定からいつでも再表示） ===== */
+const TOUR=[['home','金額ボタンを押すだけ','カテゴリーを選んで、金額ボタンを押せば記録できます。細かい金額は入れなくて大丈夫です。'],['chart','残りの予算がひと目でわかる','ホームの大きな数字が今月の残り予算です。カレンダーとグラフで振り返れます。'],['undo','間違えても大丈夫','右上の矢印で直前の操作を取り消せます。記録をタップすると編集や削除ができます。データは端末の中に保存され、設定からバックアップできます。']];
+function showTour(n){if(!(n>=0&&n<TOUR.length)){closeSheet();return}const t=TOUR[n],last=n===TOUR.length-1;
+  $('#sh>div').innerHTML=`<div style="text-align:center;padding:var(--s4) 0"><div style="width:72px;height:72px;margin:0 auto var(--s4);border-radius:50%;background:var(--ac2);color:var(--act);display:grid;place-items:center">${ic(t[0],32)}</div><h2 style="font-size:20px">${t[1]}</h2><p class="sub" style="font-size:var(--f-body);margin:0 auto;max-width:300px">${t[2]}</p><div class="flex" style="justify-content:center;margin-top:var(--s5)">${TOUR.map((_,i)=>`<i style="width:${i===n?18:6}px;height:6px;border-radius:3px;background:${i===n?'var(--ac)':'var(--ln)'};transition:width .25s"></i>`).join('')}</div></div><div class="flex">${n?`<button class="btn" style="flex:1" data-a="tour" data-n="${n-1}">戻る</button>`:'<button class="btn" style="flex:1" data-a="tourend">スキップ</button>'}<button class="btn p" style="flex:1" data-a="${last?'tourend':'tour'}" data-n="${n+1}">${last?'はじめる':'次へ'}</button></div>`;
+  $('#sh').classList.add('open')}
+/* ===== 初回設定（新規ユーザーだけ）：カテゴリー選択＋金額ボタンの最大値 ===== */
+const SUG=['食費','ランチ','コンビニ','日用品','趣味','ゲーム','交際費','飲み会','美容','衣服','交通費','旅行','サブスク','その他'];
+const SUGON=['食費','ランチ','コンビニ','日用品','趣味','交通費','その他'],MINCATS=['食費','日用品','交通費','その他'],AMAXS=[1000,3000,5000,10000,20000];
+let st={cats:[],max:5000,preview:false};
+const prevHtml=v=>amaxOk(v)?genAmts(v).map(n=>`<span class="chip" style="min-height:32px">${n.toLocaleString()}</span>`).join(''):'<span class="sub">100〜10,000,000円で入力してください</span>';
+function showSetup(preview){st={cats:[...SUGON],max:5000,preview:!!preview};
+  let e=g('setup');if(!e){e=document.createElement('div');e.id='setup';document.body.appendChild(e)}
+  e.style.cssText='position:fixed;inset:0;z-index:50;background:var(--bg);overflow:auto';
+  e.innerHTML=`<div style="max-width:520px;margin:0 auto;padding:var(--s5) var(--s4) calc(var(--s5) + env(safe-area-inset-bottom,0px))">
+  <h1 style="font-size:var(--f-h);margin:0 0 var(--s2)">はじめまして</h1><p class="sub" style="margin:0 0 var(--s5)">よく使うカテゴリーを選んでください。あとから設定で変えられます。</p>
+  <h2 class="st">カテゴリー（<span id="sc-n"></span>個選択中）</h2><div class="chips wrap" style="margin-bottom:var(--s5)">${SUG.map(n=>`<button class="chip" data-a="setcat" data-n="${n}" aria-pressed="false">${n}</button>`).join('')}</div>
+  <h2 class="st">金額ボタンの最大値</h2><div class="chips wrap">${AMAXS.map(v=>`<button class="chip" data-a="setmax" data-v="${v}">${v.toLocaleString()}円</button>`).join('')}</div>
+  <input id="sx-in" type="number" inputmode="numeric" min="100" value="5000" aria-label="金額ボタンの最大値（円）" style="margin-top:var(--s3)">
+  <div class="sub" style="margin:var(--s3) 0 var(--s2)">できるボタン</div><div class="chips wrap" id="sp-v"></div>
+  <button class="btn p" style="width:100%;margin-top:var(--s5)" data-a="setdone">はじめる</button><button class="btn" style="width:100%;margin-top:var(--s2)" data-a="setskip">スキップして始める</button>
+  ${preview?'<div class="sub" style="text-align:center;margin-top:var(--s3)">確認用です。保存はされません</div>':''}</div>`;
+  updSetup()}
+function updSetup(){const e=g('setup');if(!e)return;
+  e.querySelectorAll('[data-a="setcat"]').forEach(b=>{const on=st.cats.includes(b.dataset.n);b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)});
+  g('sc-n').textContent=st.cats.length;
+  e.querySelectorAll('[data-a="setmax"]').forEach(b=>b.classList.toggle('on',+b.dataset.v===st.max));
+  g('sp-v').innerHTML=prevHtml(st.max)}
+function sfinish(skip){
+  const names=skip?MINCATS:SUG.filter(n=>st.cats.includes(n)),mx=skip?5000:st.max;
+  if(!names.length){toast('カテゴリーを選ぶか、スキップしてください');return}
+  if(!amaxOk(mx)){toast('最大値は100〜10,000,000円で入力してください');return}
+  const e=g('setup');
+  if(st.preview){e&&e.remove();toast('確認用のため、設定は保存していません');return}
+  D.cats=names.map(n=>({id:uid(),name:n,budget:0}));D.amax=mx;sel=D.cats[0].id;H=[];save();setPref('daitai-setup','1');e&&e.remove();render();
+  if(pref('daitai-tour',v=>v==='1','')!=='1'){setPref('daitai-tour','1');showTour(0)}}
+function setAmax(v){if(!amaxOk(v)){toast('100〜10,000,000円で入力してください');return}mut(()=>{D.amax=v},'金額ボタンを作り直しました')}
+function render(){$('#app').innerHTML=(TEST?'<div class="note" style="margin:var(--s3) var(--s4);display:flex;align-items:center;justify-content:space-between;gap:var(--s3)"><span>テストモード（本物のデータには保存されません）</span><button class="btn s" data-a="texit">終了</button></div>':'')+views[tab]();$('#tabs').innerHTML=T.map(t=>`<button class="${t[0]===tab?'on':''}" data-a="tab" data-t="${t[0]}">${ic(TI[t[0]])}${t[1]}</button>`).join('')}
+/* ===== イベント（インライン onclick は使わず data 属性で受ける） ===== */
+const A={
+tour:d=>showTour(+d.n),tourend:closeSheet,
+skin:d=>{if(!SKINS[d.k])return;skin=d.k;setPref('daitai-skin',skin);applySkin();render()},
+theme:d=>{if(!THEMES.some(t=>t[0]===d.k))return;theme=d.k;setPref('daitai-theme',theme);applySkin();render()},
+tab:d=>{tab=d.t;scrollTo(0,0);render()},
+sel:d=>{sel=d.i;render()},
+add:d=>add(+d.v),
+mrec:()=>{const v=parseInt($('#mn').value);if(!(v>0&&v<=9999999)){toast('数字を入れてください');return}add(v*10)},
+undo,close:closeSheet,
+edit:d=>openEdit(d.i),
+esave:d=>{const i=D.items.find(x=>x.id===d.i);if(!i)return;const amt=Math.round(+g('e-a').value),date=g('e-d').value,cat=g('e-c').value,memo=g('e-m').value.trim().slice(0,60);
+  if(!(amt>=1&&amt<=99999999)){toast('金額を正しく入力してください');return}
+  if(!okDate(date)){toast('日付を正しく入力してください');return}
+  closeSheet();mut(()=>Object.assign(i,{amt,date,cat,memo}),'記録を更新しました',1)},
+edel:d=>{if(!confirm('この記録を削除しますか？'))return;closeSheet();mut(()=>{D.items=D.items.filter(x=>x.id!==d.i)},'記録を削除しました',1)},
+mv:d=>{vm=new Date(vm.getFullYear(),vm.getMonth()+ +d.n,1);selDay=null;render()},
+range:d=>{range=d.r;render()},
+day:d=>{selDay=d.d;render()},
+da:d=>{const c=D.cats.find(c=>c.id===d.i);if(c)mut(()=>{c.amts=amtsOf(c).filter(x=>x!==+d.v)})},
+aa:d=>{const c=D.cats.find(c=>c.id===d.i),v=Math.round(+g('na-'+d.i).value);if(!c)return;if(!(v>0&&v<=1e8)){toast('金額を入れてください');return}
+  const a=[...new Set([...amtsOf(c),v])].sort((x,y)=>x-y);if(a.length>12){toast('ボタンは12個までです');return}mut(()=>{c.amts=a})},
+rc:d=>{if(!confirm('このカテゴリーを削除しますか？（記録は残ります）'))return;mut(()=>{D.cats=D.cats.filter(c=>c.id!==d.i);if(sel===d.i)sel=D.cats[0]&&D.cats[0].id},'カテゴリーを削除しました',1)},
+ac:openAddCat,
+pc:d=>{const e=g('nc-n');if(!e)return;e.value=d.n;g('cand').innerHTML=candHtml('',d.n)},
+acs:()=>{const n=g('nc-n').value.trim().slice(0,30),b=Math.min(1e9,Math.max(0,Math.round(+g('nc-b').value||0)));
+  if(!n){toast('カテゴリー名を入力してください');return}
+  if(D.cats.some(c=>c.name===n)){toast('同じ名前のカテゴリーがあります');return}
+  if(D.cats.length>=200){toast('カテゴリーは200個までです');return}
+  const id=uid();closeSheet();mut(()=>{D.cats.push({id,name:n,budget:b});if(!sel)sel=id},'カテゴリーを追加しました',1)},
+srch:()=>{sq=sqDef();tab='search';scrollTo(0,0);render();const e=g('sq-q');if(e)e.focus()},
+sc:d=>{sq.cat=d.i||'';render()},
+sp:d=>{if(!['all','this','last','custom'].includes(d.k))return;sq.p=d.k;render()},
+sclr:()=>{sq=sqDef();render()},
+gnew:()=>gform(null),gedit:d=>gform(d.i),gopen:d=>openGoal(d.i),aedit:d=>openAlloc(d.i),
+gico:d=>{gico=d.v;document.querySelectorAll('.ico').forEach(b=>b.classList.toggle('on',b.dataset.v===gico))},
+gfill:d=>{g('ga').value=Math.min(+d.v,avail(mk(vm)))||''},
+gsave:d=>{const n=g('g-n').value.trim().slice(0,20),t=Math.round(+g('g-t').value);
+  if(!n){toast('目標の名前を入れてください');return}
+  if(!(t>=1&&t<=1e9)){toast('目標金額を入れてください');return}
+  const x=d.i&&D.goals.find(q=>q.id===d.i);closeSheet();
+  if(x)mut(()=>Object.assign(x,{name:n,icon:gico,target:t}),'目標を更新しました',1);
+  else mut(()=>{D.goals.push({id:uid(),name:n,icon:gico,target:t})},'目標を追加しました',1)},
+gdel:d=>{if(!confirm('この目標を削除しますか？\n振り分けた金額は、その月の残額に戻ります。'))return;closeSheet();mut(()=>{D.goals=D.goals.filter(q=>q.id!==d.i);D.allocs=D.allocs.filter(a=>a.goal!==d.i)},'目標を削除しました',1)},
+galloc:d=>{const x=D.goals.find(q=>q.id===d.i);if(!x)return;const m=mk(vm),a=Math.round(+g('ga').value),av=avail(m);
+  if(!(a>=1)){toast('金額を入れてください');return}
+  if(a>av){toast('振り分けできる残額は '+yen(av)+' までです');return}
+  const was=gsum(x.id)>=x.target;closeSheet();
+  mut(()=>{D.allocs.push({id:uid(),goal:x.id,month:m,date:ds(new Date()),amt:a})},yen(a)+' を振り分けました',1);
+  if(!was&&gsum(x.id)>=x.target)celebrate(x)},
+asave:d=>{const a=D.allocs.find(q=>q.id===d.i);if(!a)return;const v=Math.round(+g('al-a').value),mx=avail(a.month)+a.amt;
+  if(!(v>=1)){toast('金額を入れてください');return}
+  if(v>mx){toast('上限は '+yen(mx)+' です');return}
+  const x=D.goals.find(q=>q.id===a.goal),was=x&&gsum(x.id)>=x.target;closeSheet();
+  mut(()=>{a.amt=v},'振り分けを修正しました',1);if(x&&!was&&gsum(x.id)>=x.target)celebrate(x)},
+adel:d=>{closeSheet();mut(()=>{D.allocs=D.allocs.filter(q=>q.id!==d.i)},'振り分けを取り消しました',1)},
+setcat:d=>{const i=st.cats.indexOf(d.n);if(i>=0)st.cats.splice(i,1);else st.cats.push(d.n);updSetup()},
+setmax:d=>{st.max=+d.v;g('sx-in').value=d.v;updSetup()},
+setdone:()=>sfinish(false),setskip:()=>sfinish(true),
+resetup:()=>showSetup(true),
+texit:()=>{try{const u=new URL(location.href);u.searchParams.delete('test');u.hash='';history.replaceState(null,'',u.toString())}catch(e){}location.reload()},
+amx:d=>setAmax(+d.v),amxs:()=>setAmax(Math.round(+g('amx').value)),
+ra:d=>{const c=D.cats.find(c=>c.id===d.i);if(c)mut(()=>{delete c.amts},'自動の金額ボタンに戻しました')},
+exp:async()=>{const txt=JSON.stringify({app:'daitai-chokin',...D,exported:new Date().toISOString()},null,1),fn='daitai-chokin-'+ds(new Date()).replace(/-/g,'')+'.json';
+  try{const dl=window.claude&&await claude.use('downloads');
+    if(dl){await dl.save({filename:fn,data:txt});toast('バックアップを書き出しました');return}}
+  catch(e){if(!(e&&e.code==='declined'))toast('書き出せませんでした');return}
+  const b=new Blob([txt],{type:'application/json'}),a=document.createElement('a');
+  a.href=URL.createObjectURL(b);a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('バックアップを書き出しました')},
+imp:()=>g('fi').click(),
+impt:()=>doImport(g('im').value),
+cp:()=>{const s=JSON.stringify(D);(navigator.clipboard?navigator.clipboard.writeText(s):Promise.reject()).then(()=>toast('コピーしました'),()=>{g('im').value=s;g('im').select();toast('文字列を表示しました。コピーしてください')})}
+};
+const C={
+memo:(d,v)=>{const i=D.items.find(x=>x.id===d.i);if(i){snap();i.memo=v.trim().slice(0,60);save();toast('メモを保存しました')}},
+ren:(d,v)=>{const c=D.cats.find(c=>c.id===d.i);if(c&&v.trim())mut(()=>{c.name=v.trim().slice(0,30)})},
+cb:(d,v)=>{const c=D.cats.find(c=>c.id===d.i);if(c)mut(()=>{c.budget=Math.min(1e9,Math.max(0,Math.round(+v||0)))})},
+mb:(d,v)=>mut(()=>{D.mb[d.m]=Math.min(1e9,Math.max(0,Math.round(+v||0)))},'予算を更新しました')
+};
+document.addEventListener('click',e=>{if(e.target.id==='sh'){closeSheet();return}const t=e.target.closest('[data-a]');if(t&&A[t.dataset.a])A[t.dataset.a](t.dataset,t)});
+document.addEventListener('change',e=>{const t=e.target;if(t.dataset&&t.dataset.c&&C[t.dataset.c])C[t.dataset.c](t.dataset,t.value)});
+document.addEventListener('input',e=>{const t=e.target,id=t.id||'';
+  if(id==='mn'){const v=parseInt(t.value);g('mpv').textContent=v>0?'= '+yen(v*10):'12と入れると ¥120'}
+  else if(id==='sx-in'){st.max=Math.round(+t.value);updSetup()}
+  else if(id==='amx'){const v=Math.round(+t.value);g('amp').textContent=amaxOk(v)?'ボタン: '+genAmts(v).map(n=>n.toLocaleString()).join(' / '):'100〜10,000,000円で入力してください'}
+  else if(id==='nc-n'){const c=g('cand');if(c)c.innerHTML=candHtml(t.value,t.value.trim())}
+  else if(id.startsWith('sq-')){const k={'sq-q':'q','sq-min':'min','sq-max':'max','sq-f':'from','sq-t':'to'}[id];if(k){sq[k]=t.value;const r=g('sr');if(r)r.innerHTML=srRes()}}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
+g('fi').addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';if(!f)return;if(f.size>8e6){toast('ファイルが大きすぎます');return}
+  const r=new FileReader();r.onload=()=>doImport(String(r.result));r.onerror=()=>toast('ファイルを読み込めませんでした');r.readAsText(f)});
+applySkin();matchMedia('(prefers-color-scheme:dark)').addEventListener('change',applySkin);
+const SETUP=NEWU&&pref('daitai-setup',v=>v==='1','')!=='1';
+if(NEWU&&!SETUP){D=def();sel=D.cats[0].id}  // 設定済みなのにデータが無い異常時の保険
+render();
+if(SETUP)showSetup(false);
+else if(pref('daitai-tour',v=>v==='1','')!=='1'){setPref('daitai-tour','1');showTour(0)}
+</script></body></html>
